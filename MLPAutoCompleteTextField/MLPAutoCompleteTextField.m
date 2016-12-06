@@ -21,6 +21,7 @@
 static NSString *kSortInputStringKey = @"sortInputString";
 static NSString *kSortEditDistancesKey = @"editDistances";
 static NSString *kSortObjectKey = @"sortObject";
+static NSString *kSortPriorityGroupingKey = @"sortObjectPriorityGrouping";
 static NSString *kKeyboardAccessoryInputKeyPath = @"autoCompleteTableAppearsAsKeyboardAccessory";
 const NSTimeInterval DefaultAutoCompleteRequestDelay = 0.1;
 
@@ -1114,16 +1115,19 @@ withAutoCompleteString:(NSString *)string
     
         NSArray *suggestedStringComponents = [suggestedString componentsSeparatedByString:@" "];
         BOOL suggestedStringDeservesPriority = NO;
-        for(NSString *component in suggestedStringComponents){
+        for(int i =0; i < [suggestedStringComponents count]; i++){
+            NSString* component = suggestedStringComponents[i];
             NSRange occurrenceOfInputString = [[component lowercaseString]
                                             rangeOfString:[inputString lowercaseString]];
             
             if (occurrenceOfInputString.length != 0 && occurrenceOfInputString.location == 0) {
                 suggestedStringDeservesPriority = YES;
-                [prioritySuggestions addObject:autoCompleteObject];
+                [prioritySuggestions addObject:@{kSortObjectKey : autoCompleteObject,
+                                                 kSortPriorityGroupingKey: [NSNumber numberWithInt:i],
+                                                 kSortInputStringKey: suggestedString}];
                 break;
             }
-    
+            
             if([inputString length] <= 1){
                 //if the input string is very short, don't check anymore components of the input string.
                 break;
@@ -1136,8 +1140,17 @@ withAutoCompleteString:(NSString *)string
 
     }
     
+    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:kSortPriorityGroupingKey ascending:YES];
+    NSSortDescriptor *sortDescriptor2 = [[NSSortDescriptor alloc] initWithKey:kSortInputStringKey ascending:YES];
+    NSArray *sortDescriptors = [[NSArray alloc] initWithObjects:sortDescriptor1, sortDescriptor2, nil];
+    
+    //Weight priority suggestions by position of text in grouping
+    [prioritySuggestions sortUsingDescriptors:sortDescriptors];
+    
     NSMutableArray *results = [NSMutableArray array];
-    [results addObjectsFromArray:prioritySuggestions];
+    [prioritySuggestions enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        [results addObject:obj[kSortObjectKey]];
+    }];
     [results addObjectsFromArray:otherSuggestions];
     
     

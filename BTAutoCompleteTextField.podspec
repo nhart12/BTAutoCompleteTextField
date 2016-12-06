@@ -1,11 +1,11 @@
 Pod::Spec.new do |s|
-  s.name         = "MLPAutoCompleteTextField"
-  s.version      = "1.6"
+  s.name         = "BTAutoCompleteTextField"
+  s.version      = "1.7"
   s.summary      = "UITextfield subclass with autocomplete menu."
-  s.homepage     = "https://github.com/EddyBorja/MLPAutoCompleteTextField"
+  s.homepage     = "https://github.com/nhart12/BTAutoCompleteTextField"
   s.license      = { :type => 'MIT', :file => 'MIT_LICENSE.md' }
-  s.author       = { "Eddy Borja" => "eddyborja@gmail.com" }
-  s.source       = { :git => "https://github.com/EddyBorja/MLPAutoCompleteTextField.git", :tag => "1.6" } 
+  s.author       = { "Nathan Hart" => "nhart12@gmail.com" }
+  s.source       = { :git => "https://github.com/nhart12/BTAutoCompleteTextField.git", :tag => "1.7" } 
   s.platform     = :ios, '5.0'
   s.source_files = 'MLPAutoCompleteTextField', 'MLPAutoCompleteTextField/**/*.{h,m}'
   s.public_header_files = 'MLPAutoCompleteTextField/**/*.h'
