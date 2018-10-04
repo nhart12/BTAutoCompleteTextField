@@ -923,7 +923,7 @@ withAutoCompleteString:(NSString *)string
                                  completionHandler:^(NSArray *suggestions){
                                      
                                      [operation performSelector:@selector(didReceiveSuggestions:) withObject:suggestions];
-                                     dispatch_semaphore_signal(sentinelSemaphore);
+                                     dispatch_semaphore_signal(self->sentinelSemaphore);
                                  }];
             
             dispatch_semaphore_wait(sentinelSemaphore, DISPATCH_TIME_FOREVER);
