@@ -21,7 +21,9 @@
 static NSString *kSortInputStringKey = @"sortInputString";
 static NSString *kSortEditDistancesKey = @"editDistances";
 static NSString *kSortObjectKey = @"sortObject";
-static NSString *kSortPriorityGroupingKey = @"sortObjectPriorityGrouping";
+static NSString *kSortWordPositionPriorityGroupingKey = @"sortObjectWordPositionPriorityGrouping";
+static NSString *kSortMatchLengthPriorityGroupingKey = @"sortObjectMatchLengthPriorityGrouping";
+static NSString *kSortWordHitPriorityGroupingKey = @"sortObjectWordHitPriorityGrouping";
 static NSString *kKeyboardAccessoryInputKeyPath = @"autoCompleteTableAppearsAsKeyboardAccessory";
 const NSTimeInterval DefaultAutoCompleteRequestDelay = 0.1;
 
@@ -1114,35 +1116,55 @@ withAutoCompleteString:(NSString *)string
         NSString *suggestedString = stringsWithEditDistances[kSortInputStringKey];
     
         NSArray *suggestedStringComponents = [suggestedString componentsSeparatedByString:@" "];
-        BOOL suggestedStringDeservesPriority = NO;
-        for(int i =0; i < [suggestedStringComponents count]; i++){
+        NSArray *inputStringComponents = [inputString componentsSeparatedByString:@" "];
+        int wordHits = 0;
+        int wordPosition = 99999;
+        for(int i = 0; i < [suggestedStringComponents count]; i++){
             NSString* component = suggestedStringComponents[i];
-            NSRange occurrenceOfInputString = [[component lowercaseString]
-                                            rangeOfString:[inputString lowercaseString]];
+            for (int k = 0; k< [inputStringComponents count]; k++){
+                NSString* inputComponent = inputStringComponents[k];
+                NSRange occurrenceOfInputStringComponent = [[component lowercaseString]
+                                            rangeOfString:[inputComponent lowercaseString]];
             
-            if (occurrenceOfInputString.length != 0 && occurrenceOfInputString.location == 0) {
-                suggestedStringDeservesPriority = YES;
-                [prioritySuggestions addObject:@{kSortObjectKey : autoCompleteObject,
-                                                 kSortPriorityGroupingKey: [NSNumber numberWithInt:i],
-                                                 kSortInputStringKey: suggestedString}];
-                break;
+                if (occurrenceOfInputStringComponent.length != 0 && occurrenceOfInputStringComponent.location == 0 ) {
+                    wordHits ++;
+                    if(i < wordPosition){
+                        wordPosition = i;
+                    }
+                    break;
+                }
             }
-            
             if([inputString length] <= 1){
                 //if the input string is very short, don't check anymore components of the input string.
                 break;
             }
         }
+        if(wordHits > 0){
+            
+            NSRange occurrenceOfInputString = [[suggestedString lowercaseString]
+                                                    rangeOfString:[inputString lowercaseString]];
+                
+            [prioritySuggestions addObject:@{kSortObjectKey : autoCompleteObject,
+                                                 kSortWordPositionPriorityGroupingKey: [NSNumber numberWithInt:wordPosition],
+                                                 kSortWordHitPriorityGroupingKey: [NSNumber numberWithInt:wordHits],
+                                                 kSortMatchLengthPriorityGroupingKey: [NSNumber numberWithLong:occurrenceOfInputString.length],
+                                                 kSortInputStringKey: suggestedString}];
+                
+            
         
-        if(!suggestedStringDeservesPriority){
+        }
+        
+        else{
             [otherSuggestions addObject:autoCompleteObject];
         }
 
     }
     
-    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:kSortPriorityGroupingKey ascending:YES];
-    NSSortDescriptor *sortDescriptor2 = [[NSSortDescriptor alloc] initWithKey:kSortInputStringKey ascending:YES];
-    NSArray *sortDescriptors = [[NSArray alloc] initWithObjects:sortDescriptor1, sortDescriptor2, nil];
+    NSSortDescriptor *sortDescriptor1 = [[NSSortDescriptor alloc] initWithKey:kSortMatchLengthPriorityGroupingKey ascending:NO];
+    NSSortDescriptor *sortDescriptor2 = [[NSSortDescriptor alloc] initWithKey:kSortWordHitPriorityGroupingKey ascending:NO];
+    NSSortDescriptor *sortDescriptor3 = [[NSSortDescriptor alloc] initWithKey:kSortWordPositionPriorityGroupingKey ascending:YES];
+    NSSortDescriptor *sortDescriptor4 = [[NSSortDescriptor alloc] initWithKey:kSortInputStringKey ascending:YES];
+    NSArray *sortDescriptors = [[NSArray alloc] initWithObjects:sortDescriptor1, sortDescriptor2, sortDescriptor3, sortDescriptor4, nil];
     
     //Weight priority suggestions by position of text in grouping
     [prioritySuggestions sortUsingDescriptors:sortDescriptors];
